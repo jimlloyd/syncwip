@@ -59,7 +59,7 @@ getRepoRoot()
 
   const DST = `${dsthost}:${localDir}`;
 
-  const cmd = `rsync -rtvu --exclude .git --exclude-from=.gitignore ${root}/ ${DST}/`;
+  const cmd = `rsync -rtvul --exclude .git --exclude-from=.gitignore ${root}/ ${DST}/`;
 
   return execCommand(cmd)
 })

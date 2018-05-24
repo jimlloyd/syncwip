@@ -65,9 +65,23 @@ function synchronizeRepo() {
 
   const DST = `${dsthost}:${local_dir}`;
 
-  const cmd = `rsync -rtvul --exclude .git --exclude-from=.gitignore ${repo_root}/ ${DST}/`;
+  // We use rsync flags that will force the remote to mirror the local.
+  // -r         recursive
+  // -t         preserve times
+  // -l         copy symlinks as symlinks
+  // -v         verbose
+  // --delete   delete extraneous files from dest dirs
+  const flags = '-rtlv --delete';
 
-  return execCommand(cmd)
+  // Excludes -- Use .git to determine what should be ignored/excluded
+  // But note that we don't exlude the .git directory itself!
+  // This means that commits, branch changes, etc. we make on the local host
+  // will automatically happen on the remote host.
+  const excludes = '--exclude-from=.gitignore';
+
+  const cmd = `rsync ${flags} ${excludes} ${repo_root}/ ${DST}/`;
+
+  return execCommand(cmd);
 }
 
 function getRemoteCommand() {

@@ -1,5 +1,4 @@
-# syncwip
-Synchronize work in progress from one development machine to another
+# syncwip - Synchronize work in progress from one development machine to another
 
 This is a hack to make it easy to synchronize work in progress
 from one development machine to another, using rsync.
@@ -7,10 +6,14 @@ from one development machine to another, using rsync.
 The tool is currently specialized for this use case:
 
 1. Synchronizing code in a local git repository directory to a machine
-assumed to have the same repo, in the same relative path within user's home
+that already has the same repo, in the same relative path within user's home
 directory.
 
 2. The source machine has home directories in `/Users/...`, i.e it is a Mac.
+
+3. The local machine is the source of truth. The repository on the remote machine
+will be made to mirror the local repository through the possibly drastic action
+of synchronizing the `.git` directories.
 
 In theory, I could just use `git` for this, but this is faster, and it results
 in fewer WIP commits that will have to be squashed.
@@ -22,7 +25,7 @@ on Ubuntu.
 ## Usage
 
 ```
-$ syncwip <dsthost>
+$ syncwip <remotehost>
 ```
 
 For example:
@@ -48,12 +51,17 @@ same `{localpath}` on both of your development machines.
 
 `${dsthost}:{localpath}/{gitroot}/`
 
-`syncwip` uses the `.gitignore` file to know which files should not be
-synchronized, and of course does not synchronize the `.git` directory.
-As such, it should generally do the right thing for any `git` based
-project.
+`syncwip` uses the `.gitignore` file to determine which files should be excluded/ignored
+from synchronization.
 
-## Executing a command after sync
+NOTE: `syncwip` does NOT exclude the `.git` directory from synchronization!
+
+Synchronization is one-way only. The local repository is never modified to match
+changes on the remote.
+
+## Configuration
+
+### syncwip.postsync
 
 You can use `git config` to define a setting `syncwip.postsync`. If that setting
 is defined, it is assumed to be a command to execute in the remote repository

@@ -61,6 +61,11 @@ changes on the remote.
 
 ## Configuration
 
+### syncwip.remote
+
+If the `git` setting syncwip.remote is define, its value becomes the default
+value for the remote host, allowing `syncwip` to run with no arguments.
+
 ### syncwip.postsync
 
 You can use `git config` to define a setting `syncwip.postsync`. If that setting

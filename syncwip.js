@@ -9,7 +9,7 @@ const path = require('path');
 
 const dlog = debug('sync');
 
-const { exec } = child_process;
+const { spawn } = child_process;
 const { expect } = chai;
 
 const HOME = path.normalize(process.env.HOME);
@@ -17,26 +17,30 @@ const USER = process.env.USER;
 
 const [nodepath, scriptpath, dsthost='iron'] = process.argv;
 
-function execCommand(cmd) {
-  expect(cmd).to.be.a('string');
+function asString(chunk) {
+  if (typeof chunk === 'string')
+    return chunk;
+  else
+    return chunk.toString('utf8');
+}
+
+function execCommand(commandLine) {
+  expect(commandLine).to.be.a('string');
+  const [cmd, ...args] = commandLine.split(/\s+/);
   return new P((resolve, reject) => {
-    exec(cmd, function (err, cout, cerr) {
-      if (err) {
-        dlog(`${cmd}: failed with ${cerr}`);
-        reject(err);
-      }
-      else {
-        dlog(`${cmd}: success`);
-        resolve({cout, cerr});
-      }
-    });
+    let chunks = []
+    const stdio = ['ignore', 'pipe', 'inherit'];
+    child = spawn(cmd, args, {stdio});
+    child.on('exit', () => resolve(chunks.join('')));
+    child.on('error', reject);
+    child.stdout.on('data', chunk => chunks.push(asString(chunk)));
   });
 }
 
 function getRepoRoot() {
   var cmd = 'git rev-parse --show-toplevel';
   return execCommand(cmd)
-  .then(({cout}) => path.normalize(cout.trim()))
+  .then(cout => path.normalize(cout.trim()))
 }
 
 getRepoRoot()
@@ -55,12 +59,10 @@ getRepoRoot()
 
   const DST = `${dsthost}:${localDir}`;
 
-  const cmd = `rsync -rtvu --exclude .git --exclude node_modules ${root}/ ${DST}/`;
+  const cmd = `rsync -rtvu --exclude .git --exclude-from=.gitignore ${root}/ ${DST}/`;
 
   return execCommand(cmd)
 })
-.then(({cout, cerr}) => {
-  dlog({cerr});
-  process.stdout.write(cout);
-});
+.then(cout => process.stdout.write(cout));
+
 

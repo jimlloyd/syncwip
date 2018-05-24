@@ -1,0 +1,33 @@
+{
+  "name": "syncwip",
+  "version": "1.0.0",
+  "description": "sync git repos",
+  "main": "sync.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "jim.lloyd@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.5.1",
+    "chai": "^4.1.2",
+    "debug": "^3.1.0",
+    "lodash": "^4.17.10"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "syncrhonize",
+    "wip",
+    "work",
+    "in",
+    "progress"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jimlloyd/syncwip.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jimlloyd/syncwip/issues"
+  },
+  "homepage": "https://github.com/jimlloyd/syncwip#readme"
+}

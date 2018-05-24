@@ -52,3 +52,21 @@ same `{localpath}` on both of your development machines.
 synchronized, and of course does not synchronize the `.git` directory.
 As such, it should generally do the right thing for any `git` based
 project.
+
+## Executing a command after sync
+
+You can use `git config` to define a setting `syncwip.postsync`. If that setting
+is defined, it is assumed to be a command to execute in the remote repository
+directory.
+
+For example:
+
+```
+$ git config syncwip.postsync 'make test'
+```
+
+`syncwip` will then automatically run the comand
+
+```
+ssh dsthost "cd {localPath}; make test"
+```

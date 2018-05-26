@@ -10,8 +10,10 @@
   "author": "jim.lloyd@gmail.com",
   "license": "MIT",
   "dependencies": {
+    "argument-vector": "^1.0.2",
     "bluebird": "^3.5.1",
     "chai": "^4.1.2",
+    "chalk": "^2.4.1",
     "debug": "^3.1.0",
     "lodash": "^4.17.10",
     "npm": "^6.1.0"

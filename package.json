@@ -1,6 +1,6 @@
 {
   "name": "syncwip",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "sync wip work in progress git repos",
   "main": "syncwip.js",
   "scripts": {

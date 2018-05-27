@@ -2,14 +2,14 @@
 
 const _ = require('lodash');
 const chai = require('chai');
+const chalk = require('chalk');
 const child_process = require('child_process');
 const debug = require('debug');
-const P = require('bluebird');
 const path = require('path');
+const util = require('util');
 
 const dlog = debug('sync');
 
-const { spawn } = child_process;
 const { expect } = chai;
 
 const HOME = path.normalize(process.env.HOME);
@@ -24,58 +24,65 @@ function asString(chunk) {
     return chunk.toString('utf8');
 }
 
-function execCommand({command, stdout='pipe'}) {
-  if (_.isString(command)) {
-    command = command.split(/\s+/);
+function forward({out, err}) {
+  if (!_.isEmpty(out)) {
+    process.stdout.write(out);
   }
-  expect(command).to.be.a('array');
-  const [cmd, ...args] = command;
-  return new P((resolve, reject) => {
-    let chunks = []
-    const stdio = ['ignore', stdout, 'inherit'];
-    dlog(`Spawning command "${cmd}" with args:`, args);
-    child = spawn(cmd, args, {stdio});
-    child.on('exit', () => resolve(chunks.join('')));
-    child.on('error', reject);
-    if (stdout === 'pipe') {
-    child.stdout.on('data', chunk => chunks.push(asString(chunk)));
-    }
-  });
+  if (!_.isEmpty(err)) {
+    process.stderr.write(chalk.red(err));
+  }
 }
 
-let repo_root;
-let local_dir;
-let remote_host;
+async function exec(command) {
+  dlog(`exec command "${command}"`);
+  const execP = util.promisify(child_process.exec);
+  const {stdout, stderr} = await execP(command);
+  dlog('exec stdout:', stdout);
+  dlog('exec stderr:', stderr);
+  return {out: stdout, err: stderr};
+}
 
-function getRepoRoot() {
+async function getRepoRoot() {
   const command = 'git rev-parse --show-toplevel';
-  return execCommand({command})
-  .then(cout => path.normalize(cout.trim()))
-  .tap(root => repo_root = root);
+  const {out, err} = await exec(command);
+  forward({err});
+  expect(out).to.exist;
+  expect(out).to.be.a('string');
+  const repo_root = path.normalize(out.trim());
+  dlog(`repo_root: ${repo_root}`);
+  return repo_root;
 }
 
-function getRemoteHost() {
+async function getRemoteHost() {
   if (_remote_host) {
-    remote_host = _remote_host;
-    return P.resolve(remote_host);
+    return _remote_host;
   } else {
     const command = 'git config syncwip.remote';
-    return execCommand({command})
-    .then(_remote_host => remote_host = _remote_host.trim());
+    const {out, err} = await exec(command);
+    forward({err});
+    return out.trim();
   }
 }
 
-function synchronizeRepo() {
+function getLocalDir({repo_root}) {
+  expect(repo_root).to.exist;
+  expect(repo_root).to.be.a('string');
   dlog(`"${repo_root}"`);
   dlog(`HOME: ${HOME}`);
   dlog(`USER: ${USER}`);
-
   expect(HOME).to.equal(`/Users/${USER}`); // Assume we are on a Mac
-
   const base = `${HOME}/`;
   expect(repo_root.startsWith(base));
+  return repo_root.substr(base.length);
+}
 
-  local_dir = repo_root.substr(base.length);
+async function synchronizeRepo({repo_root, remote_host, local_dir}) {
+  expect(repo_root).to.exist;
+  expect(remote_host).to.exist;
+  expect(local_dir).to.exist;
+  expect(repo_root).to.be.a('string');
+  expect(remote_host).to.be.a('string');
+  expect(local_dir).to.be.a('string');
 
   // We use rsync flags that will force the remote to mirror the local.
   // -r         recursive
@@ -93,29 +100,35 @@ function synchronizeRepo() {
 
   const command = `rsync ${flags} ${excludes} ${repo_root}/ ${remote_host}:${local_dir}/`;
 
-  return execCommand({command, stdout: 'inherit'});
+  const {out, err} =  await exec(command);
+  forward({out, err});
 }
 
-function getRemoteCommand() {
+async function getRemoteCommand() {
   const command = 'git config syncwip.postsync';
-  return execCommand({command})
-  .then(postsync => postsync.trim());
-}
-
-function executeRemoteCommand(remoteCmd) {
-  if (_.isEmpty(remoteCmd)) {
-    dlog('No postsync comand set');
-    return P.resolve();
-  } else {
-    const command = ['ssh', remote_host, `cd ${local_dir}; ${remoteCmd}`];
-    dlog('Executing postsync comand:', command);
-    return execCommand({command, stdout: 'inherit'});
+  try {
+    const {out, err} = await exec(command);
+    return out.trim();
+  } catch(e) {
+    return null;
   }
 }
 
-P.resolve()
-.then(() => getRepoRoot())
-.then(() => getRemoteHost())
-.then(() => synchronizeRepo())
-.then(() => getRemoteCommand())
-.then(remoteCmd => executeRemoteCommand(remoteCmd));
+async function executeRemoteCommand({remote_host, remoteCmd, local_dir}) {
+  if (!_.isEmpty(remoteCmd)) {
+    const command = `ssh ${remote_host} "cd ${local_dir}; ${remoteCmd}"`
+    const {out, err} = await exec(command);
+    forward({out, err});
+  }
+}
+
+async function main() {
+  const repo_root = await getRepoRoot();
+  const remote_host = await getRemoteHost();
+  const local_dir = getLocalDir({repo_root});
+  await synchronizeRepo({repo_root, remote_host, local_dir});
+  const remote_cmd = await getRemoteCommand();
+  await executeRemoteCommand({remote_host, local_dir, remote_cmd});
+}
+
+main();

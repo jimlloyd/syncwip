@@ -114,9 +114,9 @@ async function getRemoteCommand() {
   }
 }
 
-async function executeRemoteCommand({remote_host, remoteCmd, local_dir}) {
-  if (!_.isEmpty(remoteCmd)) {
-    const command = `ssh ${remote_host} "cd ${local_dir}; ${remoteCmd}"`
+async function executeRemoteCommand({remote_host, remote_cmd, local_dir}) {
+  if (!_.isEmpty(remote_cmd)) {
+    const command = `ssh ${remote_host} "cd ${local_dir}; ${remote_cmd}"`
     const {out, err} = await exec(command);
     forward({out, err});
   }

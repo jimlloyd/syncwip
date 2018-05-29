@@ -1,6 +1,6 @@
 {
   "name": "syncwip",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "sync wip work in progress git repos",
   "main": "syncwip.js",
   "scripts": {
@@ -15,8 +15,7 @@
     "chai": "^4.1.2",
     "chalk": "^2.4.1",
     "debug": "^3.1.0",
-    "lodash": "^4.17.10",
-    "npm": "^6.1.0"
+    "lodash": "^4.17.10"
   },
   "devDependencies": {},
   "keywords": [
